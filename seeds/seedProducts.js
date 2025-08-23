@@ -8,7 +8,7 @@ const products = [
     description: 'Rich and bold espresso shot, perfect for coffee purists',
     price: 2.50,
     category: 'Coffee',
-    image: '/images/espresso.jpg',
+    image: '/images/espresso.svg',
     featured: true,
     ingredients: ['Espresso beans', 'Water'],
     nutritionalInfo: {
@@ -27,7 +27,7 @@ const products = [
     description: 'Classic Italian coffee with steamed milk and foam',
     price: 4.25,
     category: 'Coffee',
-    image: '/images/cappuccino.jpg',
+    image: '/images/cappuccino.svg',
     featured: true,
     ingredients: ['Espresso', 'Steamed milk', 'Milk foam'],
     nutritionalInfo: {
@@ -47,7 +47,7 @@ const products = [
     description: 'Smooth espresso with steamed milk and light foam',
     price: 4.75,
     category: 'Coffee',
-    image: '/images/latte.jpg',
+    image: '/images/latte.svg',
     featured: true,
     ingredients: ['Espresso', 'Steamed milk', 'Light foam'],
     nutritionalInfo: {
@@ -67,7 +67,7 @@ const products = [
     description: 'Espresso shots with hot water for a clean, strong taste',
     price: 3.25,
     category: 'Coffee',
-    image: '/images/americano.jpg',
+    image: '/images/americano.svg',
     ingredients: ['Espresso', 'Hot water'],
     nutritionalInfo: {
       calories: 10,
@@ -86,7 +86,7 @@ const products = [
     description: 'Rich chocolate and espresso with steamed milk',
     price: 5.25,
     category: 'Coffee',
-    image: '/images/mocha.jpg',
+    image: '/images/mocha.svg',
     ingredients: ['Espresso', 'Chocolate syrup', 'Steamed milk', 'Whipped cream'],
     nutritionalInfo: {
       calories: 290,
@@ -105,7 +105,7 @@ const products = [
     description: 'Premium organic green tea with antioxidants',
     price: 2.75,
     category: 'Tea',
-    image: '/images/green-tea.jpg',
+    image: '/images/green-tea.svg',
     ingredients: ['Organic green tea leaves', 'Hot water'],
     nutritionalInfo: {
       calories: 2,
@@ -124,7 +124,7 @@ const products = [
     description: 'Classic black tea with bergamot oil',
     price: 2.95,
     category: 'Tea',
-    image: '/images/earl-grey.jpg',
+    image: '/images/earl-grey.svg',
     ingredients: ['Black tea', 'Bergamot oil', 'Hot water'],
     nutritionalInfo: {
       calories: 2,
@@ -213,7 +213,7 @@ const products = [
     description: 'Cold brew coffee served over ice',
     price: 3.75,
     category: 'Cold Drinks',
-    image: '/images/iced-coffee.jpg',
+    image: '/images/iced-coffee.svg',
     ingredients: ['Cold brew coffee', 'Ice'],
     nutritionalInfo: {
       calories: 5,
