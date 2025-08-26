@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const User = require('../models/User');
 require('dotenv').config();
 
+// Product data - comprehensive coffee shop inventory
 const products = [
   {
     name: 'Espresso',
@@ -229,32 +231,183 @@ const products = [
   }
 ];
 
+// User data - default admin and test users
+const users = [
+  {
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@webcaffe.com',
+    password: 'password', // Will be hashed automatically
+    phone: '+15550123456',
+    role: 'admin',
+    isActive: true
+  },
+  {
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    password: 'password', // Will be hashed automatically
+    phone: '+15550124567',
+    role: 'customer',
+    isActive: true
+  },
+  {
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane@example.com',
+    password: 'password',
+    phone: '+15550125678',
+    role: 'customer',
+    isActive: true
+  }
+];
+
+/**
+ * Seed products to the database
+ */
 const seedProducts = async () => {
   try {
-    // Connect to MongoDB
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webcaffe';
-    await mongoose.connect(mongoURI);
-    console.log('Connected to MongoDB');
-
+    console.log('🌱 Seeding products...');
+    
     // Clear existing products
     await Product.deleteMany({});
-    console.log('Cleared existing products');
-
+    console.log('✅ Cleared existing products');
+    
     // Insert new products
     const createdProducts = await Product.insertMany(products);
-    console.log(`Created ${createdProducts.length} products`);
-
-    console.log('Seed data inserted successfully!');
-    process.exit(0);
+    console.log(`✅ Created ${createdProducts.length} products`);
+    
+    return createdProducts;
   } catch (error) {
-    console.error('Error seeding data:', error);
-    process.exit(1);
+    console.error('❌ Error seeding products:', error);
+    throw error;
   }
 };
 
-// Run the seed function if this file is executed directly
+/**
+ * Seed users to the database
+ */
+const seedUsers = async () => {
+  try {
+    console.log('🌱 Seeding users...');
+    
+    // Check if admin user already exists
+    const existingAdmin = await User.findOne({ email: 'admin@webcaffe.com' });
+    if (existingAdmin) {
+      console.log('ℹ️  Admin user already exists, skipping user seeding');
+      return;
+    }
+    
+    // Clear existing users (optional - comment out if you want to preserve existing users)
+    // await User.deleteMany({});
+    // console.log('✅ Cleared existing users');
+    
+    // Create users one by one to ensure password hashing
+    const createdUsers = [];
+    for (const userData of users) {
+      const user = new User(userData);
+      await user.save();
+      createdUsers.push(user);
+    }
+    
+    console.log(`✅ Created ${createdUsers.length} users`);
+    console.log('\n📋 Default user credentials:');
+    console.log('   Admin: admin@webcaffe.com / password');
+    console.log('   User: john@example.com / password');
+    console.log('   User: jane@example.com / password');
+    
+    return createdUsers;
+  } catch (error) {
+    console.error('❌ Error seeding users:', error);
+    throw error;
+  }
+};
+
+/**
+ * Main seeding function - seeds both products and users
+ */
+const seedDatabase = async () => {
+  try {
+    console.log('🚀 Starting database seeding...');
+    
+    // Connect to MongoDB
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webcaffe';
+    await mongoose.connect(mongoURI);
+    console.log('✅ Connected to MongoDB');
+    
+    // Seed products
+    await seedProducts();
+    
+    // Seed users
+    await seedUsers();
+    
+    console.log('\n🎉 Database seeding completed successfully!');
+    
+  } catch (error) {
+    console.error('❌ Error seeding database:', error);
+    process.exit(1);
+  } finally {
+    await mongoose.disconnect();
+    console.log('✅ Disconnected from MongoDB');
+    process.exit(0);
+  }
+};
+
+/**
+ * Individual seeding functions for selective seeding
+ */
+const seedProductsOnly = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webcaffe';
+    await mongoose.connect(mongoURI);
+    console.log('✅ Connected to MongoDB');
+    
+    await seedProducts();
+    console.log('🎉 Products seeding completed!');
+  } catch (error) {
+    console.error('❌ Error:', error);
+    process.exit(1);
+  } finally {
+    await mongoose.disconnect();
+    process.exit(0);
+  }
+};
+
+const seedUsersOnly = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webcaffe';
+    await mongoose.connect(mongoURI);
+    console.log('✅ Connected to MongoDB');
+    
+    await seedUsers();
+    console.log('🎉 Users seeding completed!');
+  } catch (error) {
+    console.error('❌ Error:', error);
+    process.exit(1);
+  } finally {
+    await mongoose.disconnect();
+    process.exit(0);
+  }
+};
+
+// Run the appropriate seeding function based on command line arguments
 if (require.main === module) {
-  seedProducts();
+  const args = process.argv.slice(2);
+  
+  if (args.includes('--products-only')) {
+    seedProductsOnly();
+  } else if (args.includes('--users-only')) {
+    seedUsersOnly();
+  } else {
+    seedDatabase();
+  }
 }
 
-module.exports = seedProducts;
+// Export functions for use in other files
+module.exports = {
+  seedDatabase,
+  seedProducts,
+  seedUsers,
+  seedProductsOnly,
+  seedUsersOnly
+};
