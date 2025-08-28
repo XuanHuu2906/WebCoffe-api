@@ -1,15 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5002;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Database connection
 const connectDB = async () => {
@@ -40,6 +44,9 @@ app.get('/', (req, res) => {
 app.use('/api/products', require('./routes/products'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/upload', require('./routes/upload'));
+app.use('/api/admin', require('./routes/admin'));
 // app.use('/api/users', require('./routes/users'));
 
 // Error handling middleware

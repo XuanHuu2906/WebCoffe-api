@@ -68,7 +68,8 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/categories', async (req, res) => {
   try {
-    const categories = await Product.distinct('category');
+    // Return the enum categories from the schema instead of existing data
+    const categories = ['Cà phê', 'Thức uống đậm vị', 'Đồ uống tươi mát', 'Bánh ngọt'];
     
     res.json({
       success: true,

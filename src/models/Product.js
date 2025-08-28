@@ -20,7 +20,7 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Product category is required'],
-    enum: ['Coffee', 'Tea', 'Pastries', 'Sandwiches', 'Desserts', 'Cold Drinks'],
+    enum: ['Cà phê', 'Thức uống đậm vị', 'Đồ uống tươi mát', 'Bánh ngọt'],
     trim: true
   },
   image: {
