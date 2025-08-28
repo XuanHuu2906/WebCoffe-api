@@ -69,13 +69,25 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'card', 'digital_wallet'],
+    enum: ['cash', 'card', 'digital_wallet', 'momo'],
     required: true
   },
   paymentStatus: {
     type: String,
     enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending'
+  },
+  // MoMo payment transaction details
+  momoTransaction: {
+    requestId: String,
+    transId: String,
+    payUrl: String,
+    deeplink: String,
+    qrCodeUrl: String,
+    resultCode: Number,
+    message: String,
+    responseTime: String,
+    payType: String
   },
   deliveryAddress: {
     street: String,
@@ -100,6 +112,18 @@ const orderSchema = new mongoose.Schema({
     min: 0
   },
   loyaltyPointsUsed: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  // Promotional code information
+  promoCode: {
+    code: String,
+    type: String,
+    value: Number,
+    description: String
+  },
+  discount: {
     type: Number,
     default: 0,
     min: 0
