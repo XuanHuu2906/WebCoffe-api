@@ -72,8 +72,9 @@ router.get('/dashboard/recent-orders', protect, authorize('admin'), async (req, 
 
     // Format the response
     const formattedOrders = recentOrders.map(order => ({
-      id: order.orderNumber,
-      customer: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown Customer',
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown Customer',
       customerEmail: order.customer ? order.customer.email : '',
       total: order.total,
       status: order.status,

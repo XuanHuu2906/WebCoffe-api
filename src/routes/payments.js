@@ -53,7 +53,7 @@ router.post('/momo/create', auth, async (req, res) => {
     const paymentResult = await momoService.createPayment({
       orderId,
       amount: Math.round(amount), // Ensure amount is integer
-      orderInfo: orderInfo || `Payment for WebCaffe order ${orderId}`,
+      orderInfo: orderInfo || `Payment for DREAM COFFEE order ${orderId}`,
       extraData: JSON.stringify({
         userId: req.user.id,
         orderNumber: orderId
