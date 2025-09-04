@@ -20,7 +20,7 @@ const connectDB = async () => {
   try {
     console.log('Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected successfully');
+    console.log('MongoDB connected successfully - nodemon restart triggered');
   } catch (error) {
     console.error('MongoDB connection failed:', error.message);
     console.log('\n=== DATABASE SETUP REQUIRED ===');
@@ -69,4 +69,4 @@ const startServer = async () => {
   });
 };
 
-startServer();
+startServer();// restart with port 5002
