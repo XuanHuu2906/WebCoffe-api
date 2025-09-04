@@ -112,7 +112,7 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    if (!paymentMethod || !['cash', 'card', 'digital_wallet', 'momo'].includes(paymentMethod)) {
+    if (!paymentMethod || !['cash', 'card', 'digital_wallet', 'momo', 'vnpay'].includes(paymentMethod)) {
       return res.status(400).json({
         success: false,
         message: 'Valid payment method is required'
