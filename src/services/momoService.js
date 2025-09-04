@@ -43,7 +43,7 @@ class MoMoService {
       const {
         orderId,
         amount,
-        orderInfo = 'Payment for WebCaffe order',
+        orderInfo = 'Payment for DREAM COFFEE order',
         extraData = ''
       } = paymentData;
 
@@ -70,8 +70,8 @@ class MoMoService {
       // Prepare request body
       const requestBody = {
         partnerCode: this.config.partnerCode,
-        partnerName: 'WebCaffe',
-        storeId: 'WebCaffeStore',
+        partnerName: 'DREAM COFFEE',
+        storeId: 'DreamCoffeeStore',
         requestId,
         amount: amount.toString(),
         orderId,

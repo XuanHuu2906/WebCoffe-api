@@ -6,7 +6,7 @@ const testAdminLogin = async () => {
     
     // Test login
     const loginResponse = await axios.post('http://localhost:5001/api/auth/login', {
-      email: 'admin@webcaffe.com',
+      email: 'admin@dreamcoffee.com',
       password: 'password'
     });
     

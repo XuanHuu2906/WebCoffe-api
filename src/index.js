@@ -37,7 +37,7 @@ const connectDB = async () => {
 
 // Routes
 app.get('/', (req, res) => {
-  res.json({ message: 'WebCaffe API is running!' });
+  res.json({ message: 'DREAM COFFEE API is running!' });
 });
 
 // Import routes
@@ -47,6 +47,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/shop', require('./routes/shop'));
 // app.use('/api/users', require('./routes/users'));
 
 // Error handling middleware

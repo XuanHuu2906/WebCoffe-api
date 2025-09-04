@@ -236,7 +236,7 @@ const users = [
   {
     firstName: 'Admin',
     lastName: 'User',
-    email: 'admin@webcaffe.com',
+    email: 'admin@dreamcoffee.com',
     password: 'password', // Will be hashed automatically
     phone: '+15550123456',
     role: 'admin',
@@ -292,7 +292,7 @@ const seedUsers = async () => {
     console.log('🌱 Seeding users...');
     
     // Check if admin user already exists
-    const existingAdmin = await User.findOne({ email: 'admin@webcaffe.com' });
+    const existingAdmin = await User.findOne({ email: 'admin@dreamcoffee.com' });
     if (existingAdmin) {
       console.log('ℹ️  Admin user already exists, skipping user seeding');
       return;
@@ -312,7 +312,7 @@ const seedUsers = async () => {
     
     console.log(`✅ Created ${createdUsers.length} users`);
     console.log('\n📋 Default user credentials:');
-    console.log('   Admin: admin@webcaffe.com / password');
+    console.log('   Admin: admin@dreamcoffee.com / password');
     console.log('   User: john@example.com / password');
     console.log('   User: jane@example.com / password');
     
@@ -331,7 +331,7 @@ const seedDatabase = async () => {
     console.log('🚀 Starting database seeding...');
     
     // Connect to MongoDB
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webcaffe';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/dreamcoffee';
     await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB');
     
