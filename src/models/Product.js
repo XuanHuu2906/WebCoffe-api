@@ -27,6 +27,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     default: '/images/default-product.jpg'
   },
+  imageUrl: {
+    type: String,
+    default: null
+  },
+  imagePublicId: {
+    type: String,
+    default: null
+  },
   inStock: {
     type: Boolean,
     default: true

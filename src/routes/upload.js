@@ -1,54 +1,33 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadToCloudinary } = require('../config/cloudinary');
 const router = express.Router();
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const extension = path.extname(file.originalname);
-    cb(null, 'product-' + uniqueSuffix + extension);
-  }
-});
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
 
 // File filter for images only
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
   } else {
-    cb(new Error('Only image files (JPEG, JPG, PNG, GIF, WebP) are allowed!'));
+    cb(new Error('Only image files are allowed!'), false);
   }
 };
 
 // Configure multer
 const upload = multer({
   storage: storage,
+  fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
-  fileFilter: fileFilter
 });
 
 // @route   POST /api/upload/image
-// @desc    Upload product image
-// @access  Private/Admin
-router.post('/image', upload.single('image'), (req, res) => {
+// @desc    Upload image to Cloudinary
+// @access  Public (can be made private later)
+router.post('/image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -57,17 +36,23 @@ router.post('/image', upload.single('image'), (req, res) => {
       });
     }
 
-    // Return the file path that can be used in the database
-    const imagePath = `/uploads/${req.file.filename}`;
-    
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, {
+      folder: 'webcaffe/products',
+      transformation: [
+        { width: 800, height: 600, crop: 'fill', quality: 'auto' },
+        { format: 'webp' }
+      ]
+    });
+
     res.json({
       success: true,
       data: {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        path: imagePath,
-        size: req.file.size,
-        mimetype: req.file.mimetype
+        imageUrl: result.url,
+        imagePublicId: result.publicId,
+        width: result.width,
+        height: result.height,
+        format: result.format
       },
       message: 'Image uploaded successfully'
     });
@@ -75,34 +60,34 @@ router.post('/image', upload.single('image'), (req, res) => {
     console.error('Error uploading image:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error while uploading image'
+      message: 'Failed to upload image',
+      error: error.message
     });
   }
 });
 
-// @route   DELETE /api/upload/image/:filename
-// @desc    Delete uploaded image
+// @route   DELETE /api/upload/image/:publicId
+// @desc    Delete uploaded image from Cloudinary
 // @access  Private/Admin
-router.delete('/image/:filename', (req, res) => {
+router.delete('/image/:publicId', async (req, res) => {
   try {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadsDir, filename);
+    const { deleteFromCloudinary } = require('../config/cloudinary');
+    const publicId = req.params.publicId;
 
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
+    // Delete from Cloudinary
+    const result = await deleteFromCloudinary(publicId);
+
+    if (result.result === 'ok') {
+      res.json({
+        success: true,
+        message: 'Image deleted successfully'
+      });
+    } else {
+      res.status(404).json({
         success: false,
-        message: 'Image file not found'
+        message: 'Image not found or already deleted'
       });
     }
-
-    // Delete the file
-    fs.unlinkSync(filePath);
-
-    res.json({
-      success: true,
-      message: 'Image deleted successfully'
-    });
   } catch (error) {
     console.error('Error deleting image:', error);
     res.status(500).json({

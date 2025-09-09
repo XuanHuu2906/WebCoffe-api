@@ -136,7 +136,7 @@ router.get('/:id', async (req, res) => {
 // @access  Private/Admin
 router.post('/', async (req, res) => {
   try {
-    const { name, category, description, price, image, featured, sizes } = req.body;
+    const { name, category, description, price, image, imageUrl, imagePublicId, featured, sizes } = req.body;
     
     const productData = {
       name,
@@ -144,6 +144,8 @@ router.post('/', async (req, res) => {
       description,
       price: parseFloat(price),
       image,
+      imageUrl,
+      imagePublicId,
       featured: featured || false,
       inStock: true,
       sizes: sizes || [{ name: 'Regular', price: parseFloat(price) }]
@@ -169,7 +171,27 @@ router.post('/', async (req, res) => {
 // @access  Private/Admin
 router.put('/:id', async (req, res) => {
   try {
-    const { name, category, description, price, image, featured, inStock, sizes } = req.body;
+    const { name, category, description, price, image, imageUrl, imagePublicId, featured, inStock, sizes } = req.body;
+    
+    // Get the existing product to check for old image
+    const existingProduct = await Product.findById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+    
+    // If updating with a new Cloudinary image, delete the old one
+    if (imagePublicId && existingProduct.imagePublicId && existingProduct.imagePublicId !== imagePublicId) {
+      try {
+        const { deleteFromCloudinary } = require('../config/cloudinary');
+        await deleteFromCloudinary(existingProduct.imagePublicId);
+      } catch (cloudinaryError) {
+        console.error('Error deleting old image from Cloudinary:', cloudinaryError);
+        // Continue with update even if Cloudinary deletion fails
+      }
+    }
     
     const updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -177,6 +199,8 @@ router.put('/:id', async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (price !== undefined) updateData.price = parseFloat(price);
     if (image !== undefined) updateData.image = image;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (imagePublicId !== undefined) updateData.imagePublicId = imagePublicId;
     if (featured !== undefined) updateData.featured = featured;
     if (inStock !== undefined) updateData.inStock = inStock;
     if (sizes !== undefined) updateData.sizes = sizes;
@@ -187,12 +211,7 @@ router.put('/:id', async (req, res) => {
       { new: true, runValidators: true }
     );
     
-    if (!updatedProduct) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
+
     
     res.json({
       success: true,
@@ -212,14 +231,27 @@ router.put('/:id', async (req, res) => {
 // @access  Private/Admin
 router.delete('/:id', async (req, res) => {
   try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
     
-    if (!deletedProduct) {
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Product not found'
       });
     }
+    
+    // Delete image from Cloudinary if it exists
+    if (product.imagePublicId) {
+      try {
+        const { deleteFromCloudinary } = require('../config/cloudinary');
+        await deleteFromCloudinary(product.imagePublicId);
+      } catch (cloudinaryError) {
+        console.error('Error deleting image from Cloudinary:', cloudinaryError);
+        // Continue with product deletion even if Cloudinary deletion fails
+      }
+    }
+    
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
     
     res.json({
       success: true,
