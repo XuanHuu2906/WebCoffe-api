@@ -3,6 +3,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config();
+// Restart trigger
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -48,6 +49,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/shop', require('./routes/shop'));
+app.use('/api/contact', require('./routes/contact'));
 // app.use('/api/users', require('./routes/users'));
 
 // Error handling middleware
@@ -71,3 +73,4 @@ const startServer = async () => {
 };
 
 startServer();// restart with port 5002
+// trigger restart

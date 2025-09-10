@@ -5,9 +5,9 @@ const testAdminLogin = async () => {
     console.log('Testing admin login...');
     
     // Test login
-    const loginResponse = await axios.post('http://localhost:5001/api/auth/login', {
-      email: 'admin@dreamcoffee.com',
-      password: 'password'
+    const loginResponse = await axios.post('http://localhost:5004/api/auth/login', {
+      email: 'admin@webcaffe.com',
+      password: 'admin123'
     });
     
     console.log('Login successful!');
@@ -16,7 +16,7 @@ const testAdminLogin = async () => {
     
     // Test dashboard stats with token
     const token = loginResponse.data.token;
-    const statsResponse = await axios.get('http://localhost:5001/api/admin/dashboard/stats', {
+    const statsResponse = await axios.get('http://localhost:5004/api/admin/dashboard/stats', {
       headers: {
         'Authorization': `Bearer ${token}`
       }

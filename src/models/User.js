@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     trim: true,
-    match: [/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number']
+    match: [/^\d{10}$/, 'Please enter a valid phone number']
   },
   address: {
     street: { type: String, trim: true },
@@ -59,7 +59,14 @@ const userSchema = new mongoose.Schema({
     min: 0
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual for full name
+userSchema.virtual('name').get(function() {
+  return `${this.firstName} ${this.lastName}`;
 });
 
 // Index for better performance

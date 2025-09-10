@@ -57,6 +57,123 @@ router.get('/dashboard/stats', protect, authorize('admin'), async (req, res) => 
   }
 });
 
+// @route   GET /api/admin/revenue/total
+// @desc    Get detailed total revenue calculation from completed orders
+// @access  Private (Admin only)
+router.get('/revenue/total', protect, authorize('admin'), async (req, res) => {
+  try {
+    // Get detailed revenue breakdown from completed orders
+    const revenueBreakdown = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['completed', 'ready'] },
+          paymentStatus: 'paid'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$total' },
+          totalSubtotal: { $sum: '$subtotal' },
+          totalTax: { $sum: '$tax' },
+          totalDiscount: { $sum: '$discount' },
+          orderCount: { $sum: 1 },
+          averageOrderValue: { $avg: '$total' }
+        }
+      }
+    ]);
+
+    // Get revenue by payment method
+    const revenueByPaymentMethod = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['completed', 'ready'] },
+          paymentStatus: 'paid'
+        }
+      },
+      {
+        $group: {
+          _id: '$paymentMethod',
+          revenue: { $sum: '$total' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { revenue: -1 }
+      }
+    ]);
+
+    // Get revenue by order type
+    const revenueByOrderType = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['completed', 'ready'] },
+          paymentStatus: 'paid'
+        }
+      },
+      {
+        $group: {
+          _id: '$orderType',
+          revenue: { $sum: '$total' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { revenue: -1 }
+      }
+    ]);
+
+    // Get all completed orders for verification
+    const completedOrders = await Order.find({
+      status: { $in: ['completed', 'ready'] },
+      paymentStatus: 'paid'
+    }).select('orderNumber total status paymentStatus createdAt paymentMethod orderType');
+
+    const breakdown = revenueBreakdown[0] || {
+      totalRevenue: 0,
+      totalSubtotal: 0,
+      totalTax: 0,
+      totalDiscount: 0,
+      orderCount: 0,
+      averageOrderValue: 0
+    };
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalRevenue: breakdown.totalRevenue,
+          totalSubtotal: breakdown.totalSubtotal,
+          totalTax: breakdown.totalTax,
+          totalDiscount: breakdown.totalDiscount,
+          completedOrderCount: breakdown.orderCount,
+          averageOrderValue: breakdown.averageOrderValue
+        },
+        breakdown: {
+          byPaymentMethod: revenueByPaymentMethod,
+          byOrderType: revenueByOrderType
+        },
+        completedOrders: completedOrders.map(order => ({
+          orderNumber: order.orderNumber,
+          total: order.total,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          paymentMethod: order.paymentMethod,
+          orderType: order.orderType,
+          createdAt: order.createdAt
+        }))
+      },
+      message: `Total revenue calculated from ${breakdown.orderCount} completed orders`
+    });
+  } catch (error) {
+    console.error('Error calculating total revenue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while calculating total revenue'
+    });
+  }
+});
+
 // @route   GET /api/admin/dashboard/recent-orders
 // @desc    Get recent orders for admin dashboard
 // @access  Private (Admin only)
@@ -65,7 +182,7 @@ router.get('/dashboard/recent-orders', protect, authorize('admin'), async (req, 
     const limit = parseInt(req.query.limit) || 5;
 
     const recentOrders = await Order.find()
-      .populate('customer', 'firstName lastName email')
+      .populate('customer', 'firstName lastName email phone address')
       .sort({ createdAt: -1 })
       .limit(limit)
       .select('orderNumber customer total status createdAt');
@@ -74,6 +191,7 @@ router.get('/dashboard/recent-orders', protect, authorize('admin'), async (req, 
     const formattedOrders = recentOrders.map(order => ({
       _id: order._id,
       orderNumber: order.orderNumber,
+      customer: order.customer,
       customerName: order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : 'Unknown Customer',
       customerEmail: order.customer ? order.customer.email : '',
       total: order.total,
@@ -194,11 +312,8 @@ router.get('/dashboard/analytics', protect, authorize('admin'), async (req, res)
   }
 });
 
-// Order Management Routes
 
-// @route   GET /api/admin/orders
-// @desc    Get all orders with filtering and pagination
-// @access  Private (Admin only)
+
 router.get('/orders', protect, authorize('admin'), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -225,7 +340,7 @@ router.get('/orders', protect, authorize('admin'), async (req, res) => {
     const skip = (page - 1) * limit;
 
     const orders = await Order.find(filter)
-      .populate('customer', 'firstName lastName email phone')
+      .populate('customer', 'firstName lastName email phone address')
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit);
@@ -463,6 +578,139 @@ router.get('/customers/:id', protect, authorize('admin'), async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching customer details'
+    });
+  }
+});
+
+// Contact Management Routes
+
+// @route   GET /api/admin/contacts
+// @desc    Get all contact messages with filtering and pagination
+// @access  Private (Admin only)
+router.get('/contacts', protect, authorize('admin'), async (req, res) => {
+  try {
+    const Contact = require('../models/Contact');
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const search = req.query.search;
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+    // Build filter object
+    let filter = {};
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { subject: { $regex: search, $options: 'i' } },
+        { ticketId: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const contacts = await Contact.find(filter)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+
+    const totalContacts = await Contact.countDocuments(filter);
+    const totalPages = Math.ceil(totalContacts / limit);
+
+    res.json({
+      success: true,
+      data: {
+        contacts,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalContacts,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching contacts'
+    });
+  }
+});
+
+// @route   GET /api/admin/contacts/:id
+// @desc    Get single contact message details
+// @access  Private (Admin only)
+router.get('/contacts/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const Contact = require('../models/Contact');
+    const contact = await Contact.findById(req.params.id);
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contact message not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: contact
+    });
+  } catch (error) {
+    console.error('Error fetching contact details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching contact details'
+    });
+  }
+});
+
+// @route   PUT /api/admin/contacts/:id/status
+// @desc    Update contact message status
+// @access  Private (Admin only)
+router.put('/contacts/:id/status', protect, authorize('admin'), async (req, res) => {
+  try {
+    const Contact = require('../models/Contact');
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['new', 'read', 'replied', 'closed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be one of: new, read, replied, closed'
+      });
+    }
+
+    const contact = await Contact.findByIdAndUpdate(
+      req.params.id,
+      { status, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contact message not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: contact,
+      message: 'Contact status updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating contact status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating contact status'
     });
   }
 });

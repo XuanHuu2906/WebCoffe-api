@@ -11,10 +11,15 @@ const router = express.Router();
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const { category, featured, search, page = 1, limit = 10 } = req.query;
+    const { category, featured, search, page = 1, limit = 10, includeOutOfStock } = req.query;
     
     // Build query object
-    let query = { inStock: true };
+    let query = {};
+    
+    // Only filter by inStock if includeOutOfStock is not set to 'true'
+    if (includeOutOfStock !== 'true') {
+      query.inStock = true;
+    }
     
     if (category) {
       query.category = new RegExp(category, 'i');
@@ -100,6 +105,62 @@ router.get('/featured', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching featured products'
+    });
+  }
+});
+
+// @route   GET /api/products/bestsellers
+// @desc    Get best selling products
+// @access  Public
+router.get('/bestsellers', async (req, res) => {
+  try {
+    const Order = require('../models/Order');
+    
+    // Get top selling products from order data
+    const bestSellers = await Order.aggregate([
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product',
+          name: { $first: '$items.name' },
+          totalSold: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+        }
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 6 }
+    ]);
+    
+    // Get full product details for best sellers
+    const productIds = bestSellers.map(item => item._id).filter(id => id);
+    const products = await Product.find({ 
+      _id: { $in: productIds }, 
+      inStock: true 
+    });
+    
+    // Merge sales data with product details
+    const bestSellerProducts = products.map(product => {
+      const salesData = bestSellers.find(item => 
+        item._id && item._id.toString() === product._id.toString()
+      );
+      return {
+        ...product.toObject(),
+        totalSold: salesData ? salesData.totalSold : 0
+      };
+    });
+    
+    // Sort by total sold and limit to 6
+    bestSellerProducts.sort((a, b) => b.totalSold - a.totalSold);
+    
+    res.json({
+      success: true,
+      data: bestSellerProducts.slice(0, 6)
+    });
+  } catch (error) {
+    console.error('Error fetching best sellers:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching best sellers'
     });
   }
 });
