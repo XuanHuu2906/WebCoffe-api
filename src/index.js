@@ -74,3 +74,7 @@ const startServer = async () => {
 
 startServer();// restart with port 5002
 // trigger restart
+// Config updated
+// Port updated to 3002
+// Port updated to 3005
+// Port updated to 5000
