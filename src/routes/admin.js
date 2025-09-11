@@ -21,11 +21,11 @@ router.get('/dashboard/stats', protect, authorize('admin'), async (req, res) => 
     // Get total customers count (users with customer role)
     const totalCustomers = await User.countDocuments({ role: 'customer' });
 
-    // Get total revenue from completed orders
+    // Get total revenue from paid orders (including confirmed, ready, and completed)
     const revenueResult = await Order.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'ready'] },
+          status: { $in: ['confirmed', 'completed', 'ready'] },
           paymentStatus: 'paid'
         }
       },
@@ -62,11 +62,11 @@ router.get('/dashboard/stats', protect, authorize('admin'), async (req, res) => 
 // @access  Private (Admin only)
 router.get('/revenue/total', protect, authorize('admin'), async (req, res) => {
   try {
-    // Get detailed revenue breakdown from completed orders
+    // Get detailed revenue breakdown from paid orders (including confirmed, ready, and completed)
     const revenueBreakdown = await Order.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'ready'] },
+          status: { $in: ['confirmed', 'completed', 'ready'] },
           paymentStatus: 'paid'
         }
       },
@@ -87,7 +87,7 @@ router.get('/revenue/total', protect, authorize('admin'), async (req, res) => {
     const revenueByPaymentMethod = await Order.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'ready'] },
+          status: { $in: ['confirmed', 'completed', 'ready'] },
           paymentStatus: 'paid'
         }
       },
@@ -107,7 +107,7 @@ router.get('/revenue/total', protect, authorize('admin'), async (req, res) => {
     const revenueByOrderType = await Order.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'ready'] },
+          status: { $in: ['confirmed', 'completed', 'ready'] },
           paymentStatus: 'paid'
         }
       },
@@ -123,9 +123,9 @@ router.get('/revenue/total', protect, authorize('admin'), async (req, res) => {
       }
     ]);
 
-    // Get all completed orders for verification
+    // Get all paid orders for verification
     const completedOrders = await Order.find({
-      status: { $in: ['completed', 'ready'] },
+      status: { $in: ['confirmed', 'completed', 'ready'] },
       paymentStatus: 'paid'
     }).select('orderNumber total status paymentStatus createdAt paymentMethod orderType');
 
@@ -235,7 +235,7 @@ router.get('/dashboard/analytics', protect, authorize('admin'), async (req, res)
       {
         $match: {
           createdAt: { $gte: sixMonthsAgo },
-          status: { $in: ['completed', 'ready'] },
+          status: { $in: ['confirmed', 'completed', 'ready'] },
           paymentStatus: 'paid'
         }
       },
