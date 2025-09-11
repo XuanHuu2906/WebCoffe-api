@@ -155,7 +155,9 @@ orderSchema.methods.calculateEstimatedTime = function() {
   const itemTime = this.items.reduce((total, item) => total + (item.quantity * 2), 0);
   const estimatedMinutes = baseTime + itemTime;
   
-  this.estimatedTime = new Date(Date.now() + estimatedMinutes * 60000);
+  const moment = require('moment-timezone');
+  const nowVN = moment.tz('Asia/Ho_Chi_Minh');
+  this.estimatedTime = nowVN.add(estimatedMinutes, 'minutes').toDate();
   return this.estimatedTime;
 };
 
