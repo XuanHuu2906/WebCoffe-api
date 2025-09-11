@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const https = require('https');
+const moment = require('moment-timezone');
 
 class MoMoService {
   constructor() {
@@ -47,8 +48,10 @@ class MoMoService {
         extraData = ''
       } = paymentData;
 
-      // Generate unique request ID
-      const requestId = `${this.config.partnerCode}${Date.now()}`;
+      // Generate unique request ID using Vietnam timezone
+      const nowVN = moment.tz('Asia/Ho_Chi_Minh');
+      const timestamp = nowVN.valueOf(); // Get timestamp in milliseconds
+      const requestId = `${this.config.partnerCode}${timestamp}`;
       
       // Create raw signature string
       const rawSignature = [

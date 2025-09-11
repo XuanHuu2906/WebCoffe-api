@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const moment = require('moment-timezone');
 
 class VNPayConfig {
   constructor() {
@@ -48,9 +49,10 @@ class VNPayConfig {
       throw new Error('Invalid orderId format for VNPay payment');
     }
 
-    const date = new Date();
-    const createDate = this.formatDate(date);
-    const expireDate = this.formatDate(new Date(date.getTime() + 15 * 60 * 1000)); // 15 minutes
+    // Use Vietnam timezone for consistent time handling in production
+    const nowVN = moment.tz('Asia/Ho_Chi_Minh');
+    const vnp_CreateDate = nowVN.format('YYYYMMDDHHmmss');
+    const vnp_ExpireDate = nowVN.clone().add(15, 'minutes').format('YYYYMMDDHHmmss');
 
     // Clean orderInfo to remove special characters and limit length
     const cleanOrderInfo = orderInfo.replace(/[^a-zA-Z0-9\s]/g, '').trim().substring(0, 255);
@@ -67,8 +69,8 @@ class VNPayConfig {
       vnp_Amount: amountInt * 100, // VNPay requires amount in VND cents
       vnp_ReturnUrl: this.vnp_ReturnUrl,
       vnp_IpAddr: ipAddr,
-      vnp_CreateDate: createDate,
-      vnp_ExpireDate: expireDate
+      vnp_CreateDate: vnp_CreateDate,
+      vnp_ExpireDate: vnp_ExpireDate
     };
 
     if (bankCode) {

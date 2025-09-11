@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const momoService = require('../services/momoService');
 const vnpayConfig = require('../config/vnpay');
 const { protect: auth } = require('../middleware/auth');
+const moment = require('moment-timezone');
 
 // @route   POST /api/payments/momo/create
 // @desc    Create MoMo payment request
@@ -411,7 +412,7 @@ router.get('/vnpay/return', async (req, res) => {
           transactionId: transactionNo,
           amount: amount,
           responseCode: responseCode,
-          paidAt: new Date()
+          paidAt: moment.tz('Asia/Ho_Chi_Minh').toDate()
         }
       });
     } else {
@@ -421,7 +422,7 @@ router.get('/vnpay/return', async (req, res) => {
         paymentDetails: {
           method: 'vnpay',
           responseCode: responseCode,
-          failedAt: new Date(),
+          failedAt: moment.tz('Asia/Ho_Chi_Minh').toDate(),
           failureReason: message
         }
       });
@@ -595,8 +596,8 @@ router.post('/card/process', auth, async (req, res) => {
       method: 'card',
       lastFour: cardData.lastFour,
       cardholderName: cardData.cardholderName,
-      paidAt: new Date(),
-      transactionId: `card_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      paidAt: moment.tz('Asia/Ho_Chi_Minh').toDate(),
+      transactionId: `card_${moment.tz('Asia/Ho_Chi_Minh').valueOf()}_${Math.random().toString(36).substr(2, 9)}`
     };
     
     await order.save();
@@ -660,7 +661,7 @@ router.post('/cash/confirm', auth, async (req, res) => {
     order.status = 'confirmed';
     order.paymentDetails = {
       method: 'cash',
-      confirmedAt: new Date(),
+      confirmedAt: moment.tz('Asia/Ho_Chi_Minh').toDate(),
       orderType: order.orderType // delivery or pickup
     };
     
